@@ -1,4 +1,4 @@
-export type ServiceCategory =
+﻿export type ServiceCategory =
   | 'Двигатель/впуск'
   | 'Масла и жидкости'
   | 'Трансмиссия'
@@ -29,21 +29,7 @@ export const services: ServiceItem[] = [
   { id: 'clean-intake-6', name: 'Чистка впуска 6 цилиндров', category: 'Двигатель/впуск', price: 30000 },
   { id: 'engine-mounts', name: 'Замена подушек ДВС', category: 'Двигатель/впуск', price: 15000 },
   { id: 'replace-damper', name: 'Замена демпфера', category: 'Двигатель/впуск', price: 7000 },
-  { id: 'gearbox-oil', name: 'Замена масла в коробке', category: 'Трансмиссия', price: 6000 },
-  {
-    id: 'front-diff-oil',
-    name: 'Замена масла в переднем редукторе',
-    category: 'Трансмиссия',
-    price: 2500
-  },
-  {
-    id: 'transfer-case-oil',
-    name: 'Замена масла в раздатке',
-    category: 'Трансмиссия',
-    price: 3500,
-    note: 'в стоимость входит сброс адаптаций'
-  },
-  { id: 'rear-diff-oil', name: 'Замена масла в заднем редукторе', category: 'Трансмиссия', price: 2000 },
+
   { id: 'engine-oil', name: 'Замена масла в ДВС', category: 'Масла и жидкости', price: 1500 },
   {
     id: 'cabin-filter',
@@ -60,12 +46,33 @@ export const services: ServiceItem[] = [
     note: 'зависит от авто'
   },
   {
-    id: 'oil-filter-housing',
-    name: 'Замена масляного стакана',
-    category: 'Двигатель/впуск',
-    price: [7000, 15000]
+    id: 'brake-fluid',
+    name: 'Замена тормозной жидкости',
+    category: 'Масла и жидкости',
+    price: 2500,
+    note: 'жидкость отдельно'
   },
-  { id: 'valve-cover', name: 'Замена клапанной крышки', category: 'Двигатель/впуск', price: 15000 },
+
+  { id: 'gearbox-oil', name: 'Замена масла в коробке', category: 'Трансмиссия', price: 6000 },
+  {
+    id: 'front-diff-oil',
+    name: 'Замена масла в переднем редукторе',
+    category: 'Трансмиссия',
+    price: 2500
+  },
+  {
+    id: 'transfer-case-oil',
+    name: 'Замена масла в раздатке',
+    category: 'Трансмиссия',
+    price: 3500,
+    note: 'в стоимость входит сброс адаптаций'
+  },
+  {
+    id: 'rear-diff-oil',
+    name: 'Замена масла в заднем редукторе',
+    category: 'Трансмиссия',
+    price: 2000
+  },
   {
     id: 'drive-shaft-boot',
     name: 'Замена/с-у привода или пыльника (если позволяет технология)',
@@ -84,13 +91,7 @@ export const services: ServiceItem[] = [
     category: 'Трансмиссия',
     price: 8000
   },
-  {
-    id: 'radiator-cleaning',
-    name: 'Мойка радиаторов',
-    category: 'Прочее',
-    price: [12000, 32000],
-    note: 'только работа, жидкости отдельно; для Porsche обычно 32000'
-  },
+
   { id: 'brake-pads', name: 'Замена колодок', category: 'Тормоза', price: 2500, unit: 'за ось' },
   {
     id: 'brake-discs',
@@ -99,6 +100,7 @@ export const services: ServiceItem[] = [
     price: 2500,
     unit: 'за ось'
   },
+
   {
     id: 'rear-ball-joints',
     name: 'Смазка задних шаровых (BMW G кузов, от 3 до X7)',
@@ -135,21 +137,29 @@ export const services: ServiceItem[] = [
     price: 4000,
     note: 'если получится раскрутить'
   },
+
   {
-    id: 'brake-fluid',
-    name: 'Замена тормозной жидкости',
-    category: 'Масла и жидкости',
-    price: 2500,
-    note: 'жидкость отдельно'
+    id: 'oil-filter-housing',
+    name: 'Замена масляного стакана',
+    category: 'Прочее',
+    price: [7000, 15000]
+  },
+  { id: 'valve-cover', name: 'Замена клапанной крышки', category: 'Прочее', price: 15000 },
+  {
+    id: 'radiator-cleaning',
+    name: 'Мойка радиаторов',
+    category: 'Прочее',
+    price: [12000, 32000],
+    note: 'только работа, жидкости отдельно; для Porsche обычно 32000'
   }
 ];
 
-export function formatPrice(price: ServiceItem['price']): string {
-  const format = (value: number) => new Intl.NumberFormat('ru-RU').format(value);
+const rubFormatter = new Intl.NumberFormat('ru-RU');
 
+export function formatPrice(price: ServiceItem['price']): string {
   if (Array.isArray(price)) {
-    return `${format(price[0])}–${format(price[1])} ₽`;
+    return `${rubFormatter.format(price[0])}–${rubFormatter.format(price[1])} ₽`;
   }
 
-  return `${format(price)} ₽`;
+  return `${rubFormatter.format(price)} ₽`;
 }
