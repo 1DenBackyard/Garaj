@@ -25,22 +25,27 @@ export type MetricPoint = {
   submitClicks: number;
 };
 
+export type MetricHourPoint = {
+  hour: string;
+  transitions: number;
+  formClicks: number;
+  submitClicks: number;
+};
+
 type EventName = keyof Metrics;
 
 export type StoreData = {
   submissions: Submission[];
   metrics: Metrics;
   metricHistory: MetricPoint[];
+  metricHistoryHourly: MetricHourPoint[];
 };
 
 const initialData: StoreData = {
   submissions: [],
-  metrics: {
-    transitions: 0,
-    formClicks: 0,
-    submitClicks: 0
-  },
-  metricHistory: []
+  metrics: { transitions: 0, formClicks: 0, submitClicks: 0 },
+  metricHistory: [],
+  metricHistoryHourly: []
 };
 
 const dataDir = path.join(process.cwd(), '.data');
@@ -48,7 +53,6 @@ const dataFile = path.join(dataDir, 'store.json');
 
 async function ensureStore() {
   await fs.mkdir(dataDir, { recursive: true });
-
   try {
     await fs.access(dataFile);
   } catch {
@@ -64,17 +68,16 @@ function normalizeStore(parsed: Partial<StoreData>): StoreData {
       formClicks: parsed.metrics?.formClicks || 0,
       submitClicks: parsed.metrics?.submitClicks || 0
     },
-    metricHistory: parsed.metricHistory || []
+    metricHistory: parsed.metricHistory || [],
+    metricHistoryHourly: parsed.metricHistoryHourly || []
   };
 }
 
 async function readStore(): Promise<StoreData> {
   await ensureStore();
   const content = await fs.readFile(dataFile, 'utf8');
-
   try {
-    const parsed = JSON.parse(content) as Partial<StoreData>;
-    return normalizeStore(parsed);
+    return normalizeStore(JSON.parse(content) as Partial<StoreData>);
   } catch {
     return initialData;
   }
@@ -87,16 +90,15 @@ async function writeStore(data: StoreData) {
 
 export async function addSubmission(payload: Omit<Submission, 'id' | 'createdAt'>) {
   const data = await readStore();
-  data.submissions.unshift({
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    ...payload
-  });
+  data.submissions.unshift({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...payload });
   await writeStore(data);
 }
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
+}
+function hourKey() {
+  return new Date().toISOString().slice(0, 13) + ':00';
 }
 
 export async function trackMetric(event: EventName) {
@@ -104,20 +106,19 @@ export async function trackMetric(event: EventName) {
   data.metrics[event] += 1;
 
   const date = todayKey();
-  const existing = data.metricHistory.find((point) => point.date === date);
+  const day = data.metricHistory.find((point) => point.date === date);
+  if (day) day[event] += 1;
+  else data.metricHistory.push({ date, transitions: event === 'transitions' ? 1 : 0, formClicks: event === 'formClicks' ? 1 : 0, submitClicks: event === 'submitClicks' ? 1 : 0 });
 
-  if (existing) {
-    existing[event] += 1;
-  } else {
-    data.metricHistory.push({
-      date,
-      transitions: event === 'transitions' ? 1 : 0,
-      formClicks: event === 'formClicks' ? 1 : 0,
-      submitClicks: event === 'submitClicks' ? 1 : 0
-    });
-  }
+  const hour = hourKey();
+  const hourPoint = data.metricHistoryHourly.find((point) => point.hour === hour);
+  if (hourPoint) hourPoint[event] += 1;
+  else data.metricHistoryHourly.push({ hour, transitions: event === 'transitions' ? 1 : 0, formClicks: event === 'formClicks' ? 1 : 0, submitClicks: event === 'submitClicks' ? 1 : 0 });
 
   data.metricHistory.sort((a, b) => a.date.localeCompare(b.date));
+  data.metricHistoryHourly.sort((a, b) => a.hour.localeCompare(b.hour));
+  data.metricHistoryHourly = data.metricHistoryHourly.slice(-168);
+
   await writeStore(data);
 }
 
