@@ -11,32 +11,35 @@ html {
 }
 
 body {
-  @apply min-h-screen bg-garage-black text-slate-100 antialiased;
-  background:
-    radial-gradient(60rem 35rem at -5% -20%, rgba(83, 165, 255, 0.16), transparent 65%),
-    radial-gradient(45rem 28rem at 110% -10%, rgba(139, 92, 246, 0.14), transparent 60%),
-    radial-gradient(40rem 24rem at 80% 120%, rgba(239, 68, 68, 0.1), transparent 60%),
-    linear-gradient(145deg, #05070a 0%, #0b1220 48%, #121821 100%);
+  @apply min-h-screen bg-ui-bg bg-ui-bg text-ui-text antialiased;
 }
 
 @layer components {
-  .m-card {
-    @apply rounded-3xl border border-white/10 bg-white/[0.045] backdrop-blur-2xl shadow-panel;
+  .ui-card {
+    @apply rounded-xl2 border border-white/10 bg-ui-panel/85 shadow-soft backdrop-blur-sm;
   }
 
-  .m-card-hover {
-    @apply transition-all duration-300 hover:-translate-y-0.5 hover:border-garage-mblue/40 hover:shadow-glow;
+  .ui-card-subtle {
+    @apply rounded-xl2 border border-white/10 bg-ui-panelAlt/80;
   }
 
-  .m-title {
-    @apply bg-m-gradient bg-clip-text text-transparent;
+  .ui-title {
+    @apply text-ui-text;
   }
 
-  .input-premium {
-    @apply w-full rounded-xl border border-white/15 bg-black/35 px-4 py-2.5 text-sm text-slate-100 outline-none placeholder:text-slate-500 transition-all focus:border-garage-mblue/50 focus:ring-2 focus:ring-garage-mblue/25;
+  .ui-input {
+    @apply w-full rounded-xl border border-white/15 bg-black/20 px-4 py-2.5 text-sm text-ui-text outline-none transition-all placeholder:text-ui-muted focus:border-ui-accent;
   }
 
-  .btn-cta {
-    @apply rounded-xl bg-warm-gradient px-4 py-3 font-semibold text-slate-950 transition-all duration-200 hover:brightness-110 hover:shadow-glowWarm active:scale-[0.99];
+  .ui-input:focus {
+    box-shadow: theme('boxShadow.focus');
+  }
+
+  .ui-button {
+    @apply rounded-xl bg-ui-accent px-4 py-3 font-semibold text-white transition-all hover:bg-ui-accentSoft active:scale-[0.99];
+  }
+
+  .ui-hover-line {
+    @apply transition-all hover:border-ui-accent/40 hover:bg-white/[0.03];
   }
 }

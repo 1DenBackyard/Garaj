@@ -20,7 +20,7 @@ const initialFormState: FormState = {
 };
 
 function WheelSpinner() {
-  return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-900 border-t-transparent" />;
+  return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />;
 }
 
 export default function BookingForm() {
@@ -51,34 +51,34 @@ export default function BookingForm() {
   }
 
   return (
-    <section className="m-card p-7">
-      <h1 className="m-title mb-4 text-3xl font-bold">Запись в сервис</h1>
+    <section className="ui-card p-7">
+      <h1 className="ui-title mb-4 text-3xl font-bold">Запись в сервис</h1>
       <form onSubmit={handleSubmit} className="grid gap-3">
-        <input className="input-premium" type="text" placeholder="Имя" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
-        <input className="input-premium" type="tel" placeholder="Телефон" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} required />
-        <input className="input-premium" type="text" placeholder="Марка / модель" value={form.car} onChange={(e) => setForm((p) => ({ ...p, car: e.target.value }))} />
-        <select className="input-premium" value={form.serviceId} onChange={(e) => setForm((p) => ({ ...p, serviceId: e.target.value }))}>
+        <input className="ui-input" type="text" placeholder="Имя" value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required />
+        <input className="ui-input" type="tel" placeholder="Телефон" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} required />
+        <input className="ui-input" type="text" placeholder="Марка / модель" value={form.car} onChange={(e) => setForm((p) => ({ ...p, car: e.target.value }))} />
+        <select className="ui-input" value={form.serviceId} onChange={(e) => setForm((p) => ({ ...p, serviceId: e.target.value }))}>
           <option value="">Услуга (не выбрано)</option>
           {services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}
         </select>
-        <textarea className="input-premium min-h-20" placeholder="Необходимые работы" value={form.requiredWorks} onChange={(e) => setForm((p) => ({ ...p, requiredWorks: e.target.value }))} />
-        <textarea className="input-premium min-h-20" placeholder="Комментарий" value={form.comment} onChange={(e) => setForm((p) => ({ ...p, comment: e.target.value }))} />
+        <textarea className="ui-input min-h-20" placeholder="Необходимые работы" value={form.requiredWorks} onChange={(e) => setForm((p) => ({ ...p, requiredWorks: e.target.value }))} />
+        <textarea className="ui-input min-h-20" placeholder="Комментарий" value={form.comment} onChange={(e) => setForm((p) => ({ ...p, comment: e.target.value }))} />
 
-        <label className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-slate-300">
-          <span className="mb-2 block text-garage-mblue">Загрузка фото/видео</span>
-          <input type="file" accept="image/*,video/*" onChange={handleAttachment} className="block w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-garage-mblue/20 file:px-3 file:py-2 file:text-garage-mblue hover:file:bg-garage-mblue/35" />
-          {form.attachmentName && <span className="mt-2 block text-xs text-garage-mblue">Файл: {form.attachmentName}</span>}
+        <label className="rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-ui-muted">
+          <span className="mb-2 block text-ui-accent">Загрузка фото/видео</span>
+          <input type="file" accept="image/*,video/*" onChange={handleAttachment} className="block w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-ui-accent/20 file:px-3 file:py-2 file:text-ui-accent hover:file:bg-ui-accent/35" />
+          {form.attachmentName && <span className="mt-2 block text-xs text-ui-accent">Файл: {form.attachmentName}</span>}
         </label>
 
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" value={form.company} onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))} name="company" />
-        <label className="flex items-start gap-2 text-sm text-slate-300"><input type="checkbox" checked={form.consent} onChange={(e) => setForm((p) => ({ ...p, consent: e.target.checked }))} className="mt-1 accent-garage-mblue" required /><span>Соглашаюсь на обработку персональных данных</span></label>
+        <label className="flex items-start gap-2 text-sm text-ui-muted"><input type="checkbox" checked={form.consent} onChange={(e) => setForm((p) => ({ ...p, consent: e.target.checked }))} className="mt-1 accent-ui-accent" required /><span>Соглашаюсь на обработку персональных данных</span></label>
 
-        <button type="submit" disabled={isSubmitting} className="btn-cta inline-flex items-center justify-center gap-2 text-white">
+        <button type="submit" disabled={isSubmitting} className="ui-button inline-flex items-center justify-center gap-2">
           {isSubmitting ? <><WheelSpinner /> Отправка...</> : 'Отправить в Telegram'}
         </button>
       </form>
-      {status.type === 'success' && <p className="mt-3 text-sm text-emerald-400">{status.message}</p>}
-      {status.type === 'error' && <p className="mt-3 text-sm text-rose-400">{status.message}</p>}
+      {status.type === 'success' && <p className="mt-3 text-sm text-ui-muted">{status.message}</p>}
+      {status.type === 'error' && <p className="mt-3 text-sm text-ui-muted">{status.message}</p>}
     </section>
   );
 }

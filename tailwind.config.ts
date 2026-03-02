@@ -5,25 +5,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        garage: {
-          black: '#05070A',
-          navy: '#0B1220',
-          graphite: '#121821',
-          mblue: '#53A5FF',
-          mpurple: '#8B5CF6',
-          mred: '#EF4444',
-          amber: '#F5B544',
-          neon: '#FF8A26'
+        ui: {
+          bg: '#06080D',
+          panel: '#0F141C',
+          panelAlt: '#121A24',
+          text: '#E5E7EB',
+          muted: '#9CA3AF',
+          accent: '#60A5FA',
+          accentSoft: '#1D4ED8'
         }
       },
       boxShadow: {
-        panel: '0 20px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08)',
-        glow: '0 0 0 1px rgba(83,165,255,.15), 0 0 30px rgba(83,165,255,.22)',
-        glowWarm: '0 0 0 1px rgba(245,181,68,.2), 0 0 30px rgba(255,138,38,.26)'
+        soft: '0 10px 30px rgba(0, 0, 0, 0.28)',
+        focus: '0 0 0 1px rgba(96,165,250,.35), 0 0 0 4px rgba(96,165,250,.12)',
+        hover: '0 0 0 1px rgba(96,165,250,.25), 0 8px 24px rgba(29,78,216,.2)'
+      },
+      borderRadius: {
+        xl2: '1rem'
+      },
+      spacing: {
+        18: '4.5rem'
       },
       backgroundImage: {
-        'm-gradient': 'linear-gradient(90deg,#53A5FF 0%,#8B5CF6 42%,#EF4444 100%)',
-        'warm-gradient': 'linear-gradient(90deg,#F5B544 0%,#FF8A26 100%)'
+        'ui-bg': 'linear-gradient(160deg,#06080D 0%,#0B1220 55%,#121A24 100%)',
+        'ui-line': 'linear-gradient(90deg,transparent 0%,rgba(96,165,250,.55) 50%,transparent 100%)'
       }
     }
   },
