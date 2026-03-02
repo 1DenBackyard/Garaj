@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply min-h-screen bg-ui-bg bg-ui-bg text-ui-text antialiased;
+}
+
+@layer components {
+  .ui-card {
+    @apply rounded-xl2 border border-white/10 bg-ui-panel/85 shadow-soft backdrop-blur-sm;
+  }
+
+  .ui-card-subtle {
+    @apply rounded-xl2 border border-white/10 bg-ui-panelAlt/80;
+  }
+
+  .ui-title {
+    @apply text-ui-text;
+  }
+
+  .ui-input {
+    @apply w-full rounded-xl border border-white/15 bg-black/20 px-4 py-2.5 text-sm text-ui-text outline-none transition-all placeholder:text-ui-muted focus:border-ui-accent;
+  }
+
+  .ui-input:focus {
+    box-shadow: theme('boxShadow.focus');
+  }
+
+  .ui-button {
+    @apply rounded-xl bg-ui-accent px-4 py-3 font-semibold text-white transition-all hover:bg-ui-accentSoft active:scale-[0.99];
+  }
+
+  .ui-hover-line {
+    @apply transition-all hover:border-ui-accent/40 hover:bg-white/[0.03];
+  }
+}
