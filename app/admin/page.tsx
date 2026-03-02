@@ -6,9 +6,12 @@ export default async function AdminPage() {
   const data = await getDashboardData();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 text-slate-100">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-amber-200">Админка</h1>
+    <main className="mx-auto max-w-7xl px-4 py-10 text-slate-100">
+      <div className="glass-card mb-6 flex items-center justify-between p-5">
+        <div>
+          <h1 className="text-3xl font-bold neon-title">Админка Garaj</h1>
+          <p className="text-sm text-slate-400">Управление заявками и аналитикой</p>
+        </div>
         <LogoutButton />
       </div>
 
@@ -23,12 +26,12 @@ export default async function AdminPage() {
         <MetricsChart points={data.metricHistory} />
       </div>
 
-      <section className="rounded-2xl border border-amber-400/30 bg-slate-900/70 p-4 shadow-[0_0_30px_rgba(34,211,238,0.12)]">
+      <section className="glass-card p-5">
         <h2 className="mb-4 text-xl font-semibold text-amber-200">Все заявки</h2>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-700 text-slate-300">
+              <tr className="border-b border-white/10 text-slate-300">
                 <th className="p-2">Дата</th>
                 <th className="p-2">Имя</th>
                 <th className="p-2">Телефон</th>
@@ -40,7 +43,7 @@ export default async function AdminPage() {
             </thead>
             <tbody>
               {data.submissions.map((item) => (
-                <tr key={item.id} className="border-b border-slate-800 align-top text-slate-200">
+                <tr key={item.id} className="border-b border-white/5 align-top text-slate-200">
                   <td className="p-2 whitespace-nowrap">{new Date(item.createdAt).toLocaleString('ru-RU')}</td>
                   <td className="p-2">{item.name}</td>
                   <td className="p-2">{item.phone}</td>
@@ -53,7 +56,6 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </div>
-        {data.submissions.length === 0 && <p className="p-2 text-slate-400">Пока заявок нет.</p>}
       </section>
     </main>
   );
@@ -61,7 +63,7 @@ export default async function AdminPage() {
 
 function MetricCard({ title, value }: { title: string; value: string }) {
   return (
-    <article className="rounded-2xl border border-amber-400/30 bg-slate-900/70 p-4 shadow-[0_0_30px_rgba(34,211,238,0.12)]">
+    <article className="glass-card p-4">
       <p className="text-sm text-slate-400">{title}</p>
       <p className="mt-2 text-3xl font-bold text-amber-200">{value}</p>
     </article>
