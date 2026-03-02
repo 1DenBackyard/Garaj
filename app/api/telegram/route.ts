@@ -9,6 +9,7 @@ type RequestBody = {
   serviceId?: string;
   requiredWorks?: string;
   comment?: string;
+  attachmentName?: string;
   company?: string;
   consent?: boolean;
 };
@@ -63,7 +64,8 @@ export async function POST(request: Request) {
       `Авто: ${toSafeText(body.car)}`,
       `Услуга: ${selectedService ? selectedService.name : '—'}`,
       `Необходимые работы: ${toSafeText(body.requiredWorks)}`,
-      `Комментарий: ${toSafeText(body.comment)}`
+      `Комментарий: ${toSafeText(body.comment)}`,
+      `Вложение: ${toSafeText(body.attachmentName)}`
     ].join('\n');
 
     const telegramResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -90,7 +92,7 @@ export async function POST(request: Request) {
       car: toSafeText(body.car),
       service: selectedService ? selectedService.name : '—',
       requiredWorks: toSafeText(body.requiredWorks),
-      comment: toSafeText(body.comment)
+      comment: `${toSafeText(body.comment)}${body.attachmentName ? ` | Вложение: ${toSafeText(body.attachmentName)}` : ''}`
     });
 
     return NextResponse.json({ ok: true });

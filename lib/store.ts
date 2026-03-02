@@ -12,7 +12,14 @@ export type Submission = {
   comment: string;
 };
 
-type Metrics = {
+export type Metrics = {
+  transitions: number;
+  formClicks: number;
+  submitClicks: number;
+};
+
+export type MetricPoint = {
+  date: string;
   transitions: number;
   formClicks: number;
   submitClicks: number;
@@ -20,9 +27,10 @@ type Metrics = {
 
 type EventName = keyof Metrics;
 
-type StoreData = {
+export type StoreData = {
   submissions: Submission[];
   metrics: Metrics;
+  metricHistory: MetricPoint[];
 };
 
 const initialData: StoreData = {
@@ -31,7 +39,8 @@ const initialData: StoreData = {
     transitions: 0,
     formClicks: 0,
     submitClicks: 0
-  }
+  },
+  metricHistory: []
 };
 
 const dataDir = path.join(process.cwd(), '.data');
@@ -47,20 +56,25 @@ async function ensureStore() {
   }
 }
 
+function normalizeStore(parsed: Partial<StoreData>): StoreData {
+  return {
+    submissions: parsed.submissions || [],
+    metrics: {
+      transitions: parsed.metrics?.transitions || 0,
+      formClicks: parsed.metrics?.formClicks || 0,
+      submitClicks: parsed.metrics?.submitClicks || 0
+    },
+    metricHistory: parsed.metricHistory || []
+  };
+}
+
 async function readStore(): Promise<StoreData> {
   await ensureStore();
   const content = await fs.readFile(dataFile, 'utf8');
 
   try {
-    const parsed = JSON.parse(content) as StoreData;
-    return {
-      submissions: parsed.submissions || [],
-      metrics: {
-        transitions: parsed.metrics?.transitions || 0,
-        formClicks: parsed.metrics?.formClicks || 0,
-        submitClicks: parsed.metrics?.submitClicks || 0
-      }
-    };
+    const parsed = JSON.parse(content) as Partial<StoreData>;
+    return normalizeStore(parsed);
   } catch {
     return initialData;
   }
@@ -81,9 +95,29 @@ export async function addSubmission(payload: Omit<Submission, 'id' | 'createdAt'
   await writeStore(data);
 }
 
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export async function trackMetric(event: EventName) {
   const data = await readStore();
   data.metrics[event] += 1;
+
+  const date = todayKey();
+  const existing = data.metricHistory.find((point) => point.date === date);
+
+  if (existing) {
+    existing[event] += 1;
+  } else {
+    data.metricHistory.push({
+      date,
+      transitions: event === 'transitions' ? 1 : 0,
+      formClicks: event === 'formClicks' ? 1 : 0,
+      submitClicks: event === 'submitClicks' ? 1 : 0
+    });
+  }
+
+  data.metricHistory.sort((a, b) => a.date.localeCompare(b.date));
   await writeStore(data);
 }
 
