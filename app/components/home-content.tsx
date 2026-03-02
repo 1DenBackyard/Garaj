@@ -1,78 +1,82 @@
-﻿'use client';
+'use client';
 
 import { FormEvent, useMemo, useState } from 'react';
-import { categories, formatPrice, ServiceCategory, services } from '@/data/services';
+import { categories, formatPrice, services, ServiceCategory } from '@/data/services';
 
 type FormState = {
-  fullName: string;
-  contact: string;
+  name: string;
+  phone: string;
   car: string;
+  serviceId: string;
+  requiredWorks: string;
   comment: string;
   company: string;
+  consent: boolean;
 };
 
 const initialFormState: FormState = {
-  fullName: '',
-  contact: '',
+  name: '',
+  phone: '',
   car: '',
+  serviceId: '',
+  requiredWorks: '',
   comment: '',
-  company: ''
-};
-
-type RequestState = {
-  type: 'idle' | 'success' | 'error';
-  message: string;
-};
-
-type CategoryBlock = {
-  category: ServiceCategory;
-  items: typeof services;
+  company: '',
+  consent: false
 };
 
 export default function HomeContent() {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<'Все' | ServiceCategory>('Все');
   const [form, setForm] = useState<FormState>(initialFormState);
+  const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
+    type: 'idle',
+    message: ''
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [requestState, setRequestState] = useState<RequestState>({ type: 'idle', message: '' });
+  const [selectedForCalc, setSelectedForCalc] = useState<string[]>([]);
 
   const filteredServices = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
     return services.filter((service) => {
-      const byCategory = activeCategory === 'Все' || service.category === activeCategory;
-      const byQuery =
+      const categoryMatch = activeCategory === 'Все' || service.category === activeCategory;
+      const queryMatch =
         normalizedQuery.length === 0 || service.name.toLowerCase().includes(normalizedQuery);
 
-      return byCategory && byQuery;
+      return categoryMatch && queryMatch;
     });
   }, [activeCategory, query]);
 
-  const groupedServices = useMemo<CategoryBlock[]>(() => {
-    const byCategory = new Map<ServiceCategory, typeof services>();
 
-    for (const category of categories) {
-      byCategory.set(category, []);
-    }
+  const selectedNames = useMemo(() => {
+    return services
+      .filter((service) => selectedForCalc.includes(service.id))
+      .map((service) => service.name)
+      .join(', ');
+  }, [selectedForCalc]);
 
-    for (const item of filteredServices) {
-      const list = byCategory.get(item.category);
-      if (list) {
-        list.push(item);
+  const calcTotal = useMemo(() => {
+    return selectedForCalc.reduce((sum, id) => {
+      const service = services.find((item) => item.id === id);
+      if (!service || Array.isArray(service.price)) {
+        return sum;
       }
-    }
+      return sum + service.price;
+    }, 0);
+  }, [selectedForCalc]);
 
-    return categories
-      .map((category) => ({
-        category,
-        items: byCategory.get(category) || []
-      }))
-      .filter((group) => group.items.length > 0);
-  }, [filteredServices]);
+  async function track(event: 'transitions' | 'formClicks' | 'submitClicks') {
+    await fetch('/api/metrics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event })
+    });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setRequestState({ type: 'idle', message: '' });
+    setStatus({ type: 'idle', message: '' });
     setIsSubmitting(true);
 
     try {
@@ -84,16 +88,16 @@ export default function HomeContent() {
         body: JSON.stringify(form)
       });
 
-      const payload = (await response.json()) as { ok: boolean; error?: string };
+      const data = (await response.json()) as { ok: boolean; error?: string };
 
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error || 'Не удалось отправить заявку.');
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Не удалось отправить заявку.');
       }
 
       setForm(initialFormState);
-      setRequestState({ type: 'success', message: 'Заявка отправлена' });
+      setStatus({ type: 'success', message: 'Заявка отправлена' });
     } catch (error) {
-      setRequestState({
+      setStatus({
         type: 'error',
         message: error instanceof Error ? error.message : 'Неизвестная ошибка при отправке.'
       });
@@ -103,221 +107,222 @@ export default function HomeContent() {
   }
 
   return (
-    <main className="relative mx-auto max-w-6xl px-4 pb-20 pt-4 sm:px-6 lg:px-8">
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="halo halo-left" />
-        <div className="halo halo-right" />
-      </div>
-
-      <header className="sticky top-0 z-30 mb-6 rounded-2xl border border-zinc-800/80 bg-zinc-950/90 shadow-2xl backdrop-blur">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
-          <div className="min-w-0">
-            <p className="text-base font-semibold tracking-wide text-zinc-100 sm:text-lg">Хороший сервис</p>
-            <p className="mt-1 max-w-xl text-xs text-zinc-400 sm:text-sm">
-              Мы - команда аккредитованных экспертов: работаем с душой, берём проекты в свободное
-              время и держим цены без лишней наценки.
-            </p>
-          </div>
-
-          <nav className="flex items-center gap-2 text-sm">
-            <a
-              href="#prices"
-              className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-zinc-200 transition hover:border-amber-500/60 hover:text-white"
-            >
+    <main className="mx-auto max-w-6xl px-4 pb-16">
+      <header className="sticky top-0 z-10 mb-8 border-b border-slate-200 bg-slate-50/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between py-4">
+          <p className="text-xl font-semibold">Автосервис</p>
+          <nav className="flex gap-2 text-sm font-medium">
+            <a className="rounded-md px-3 py-2 hover:bg-slate-200" href="#prices" onClick={() => track('transitions')}>
               Прайс
             </a>
-            <a
-              href="#book"
-              className="rounded-lg bg-amber-500 px-3 py-2 font-semibold text-zinc-950 transition hover:bg-amber-400"
-            >
+            <a className="rounded-md px-3 py-2 hover:bg-slate-200" href="#book" onClick={() => track('transitions')}>
               Записаться
             </a>
           </nav>
         </div>
       </header>
 
-      <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl sm:p-7">
-        <div className="grid-pattern rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-5 sm:p-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-400">Все по делу, качественно, дешево</p>
-          <h1 className="mt-3 text-2xl font-bold leading-tight text-zinc-100 sm:text-4xl">
-            Ремонт и обслуживание автомобилей
-          </h1>
-          <p className="mt-3 text-sm text-zinc-300 sm:text-base">
-            Цены указаны за работы. Прокладки, химия и жидкости считаются отдельно.
-          </p>
+      <div className="grid gap-6 lg:grid-cols-[1.25fr,0.85fr]">
+        <div>
+          <section className="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h1 className="mb-3 text-3xl font-bold">Ремонт и обслуживание автомобилей</h1>
+            <p className="mb-4 text-slate-700">
+              Цены указаны за работы. Прокладки/химия/жидкости — отдельно.
+            </p>
+            <div className="space-y-1 text-sm text-slate-600">
+              <p>• Работаем по предварительной записи.</p>
+              <p>• Финальная стоимость зависит от состояния узлов и доступа к ним.</p>
+              <p>• Расходники согласовываем перед началом работ.</p>
+            </div>
+          </section>
 
-          <div className="mt-5 grid gap-2 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 text-sm text-zinc-300 sm:grid-cols-3 sm:gap-4">
-            <p>Работаем по предварительной записи.</p>
-            <p>Точную стоимость подтверждаем после осмотра.</p>
-            <p>Запчасти и сроки заранее согласовываем с вами.</p>
-          </div>
-        </div>
-      </section>
+          <section id="prices" className="mb-6 scroll-mt-24 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-2xl font-semibold">Прайс</h2>
 
-      <section
-        id="prices"
-        className="mb-6 scroll-mt-28 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl sm:p-7"
-      >
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">Каталог работ</h2>
-            <p className="mt-1 text-sm text-zinc-400">{filteredServices.length} позиций по текущему фильтру</p>
-          </div>
-        </div>
+            <div className="mb-4 grid gap-3 md:grid-cols-[2fr,1fr]">
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Поиск услуги"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+              />
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-zinc-300">Поиск услуги</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Например: мойка радиаторов"
-              className="h-11 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-zinc-100 outline-none ring-amber-500/40 transition focus:ring"
-            />
-          </label>
+              <select
+                value={activeCategory}
+                onChange={(event) => setActiveCategory(event.target.value as 'Все' | ServiceCategory)}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+              >
+                <option value="Все">Все категории</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-zinc-300">Категория</span>
-            <select
-              value={activeCategory}
-              onChange={(event) => setActiveCategory(event.target.value as 'Все' | ServiceCategory)}
-              className="h-11 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-zinc-100 outline-none ring-amber-500/40 transition focus:ring"
+            <ul className="divide-y divide-slate-200">
+              {filteredServices.map((service) => (
+                <li key={service.id} className="py-3">
+                  <div className="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between">
+                    <p className="font-medium">{service.name}</p>
+                    <p className="font-semibold">{formatPrice(service.price)}</p>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    {service.unit ? `(${service.unit})` : ''}
+                    {service.unit && service.note ? ' — ' : ''}
+                    {service.note ? service.note : ''}
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            {filteredServices.length === 0 && (
+              <p className="mt-4 text-sm text-slate-500">По вашему запросу ничего не найдено.</p>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-3 text-2xl font-semibold">Калькулятор работ</h2>
+            <p className="mb-3 text-sm text-slate-600">Выберите позиции с фиксированной ценой для быстрого подсчёта.</p>
+            <div className="grid gap-2">
+              {services.map((service) => (
+                <label key={service.id} className="flex items-center justify-between gap-2 rounded-md border border-slate-200 p-2">
+                  <span className="text-sm">{service.name}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{formatPrice(service.price)}</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedForCalc.includes(service.id)}
+                      disabled={Array.isArray(service.price)}
+                      onChange={(event) =>
+                        setSelectedForCalc((prev) =>
+                          event.target.checked ? [...prev, service.id] : prev.filter((id) => id !== service.id)
+                        )
+                      }
+                    />
+                  </span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-4 text-lg font-semibold">Итого: {new Intl.NumberFormat('ru-RU').format(calcTotal)} ₽</p>
+            <p className="text-xs text-slate-500">Диапазоны в итог не включаются.</p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setForm((prev) => ({
+                  ...prev,
+                  requiredWorks: selectedNames
+                }));
+                const bookSection = document.getElementById('book');
+                if (bookSection) {
+                  bookSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="mt-4 w-full rounded-md border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-medium hover:bg-slate-200"
             >
-              <option value="Все">Все категории</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
+              отправить заявку на этот перечень и получить скидку
+            </button>
+
+          </section>
+        </div>
+
+        <section id="book" className="h-fit scroll-mt-24 rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:sticky lg:top-24">
+          <h2 className="mb-4 text-2xl font-semibold">Записаться</h2>
+
+          <form onSubmit={handleSubmit} className="grid gap-3" onClick={() => track('formClicks')}>
+            <input
+              type="text"
+              placeholder="Имя"
+              value={form.name}
+              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+              required
+            />
+
+            <input
+              type="tel"
+              placeholder="Телефон"
+              value={form.phone}
+              onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+              required
+            />
+
+            <input
+              type="text"
+              placeholder="Марка / модель"
+              value={form.car}
+              onChange={(event) => setForm((prev) => ({ ...prev, car: event.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+            />
+
+            <select
+              value={form.serviceId}
+              onChange={(event) => setForm((prev) => ({ ...prev, serviceId: event.target.value }))}
+              className="rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+            >
+              <option value="">Услуга (не выбрано)</option>
+              {services.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {service.name}
                 </option>
               ))}
             </select>
-          </label>
-        </div>
 
-        {groupedServices.length > 0 ? (
-          <div className="mt-5 grid gap-4">
-            {groupedServices.map((group) => (
-              <article key={group.category} className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <h3 className="text-base font-semibold text-zinc-100 sm:text-lg">{group.category}</h3>
-                  <span className="rounded-full border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-400">
-                    {group.items.length}
-                  </span>
-                </div>
-
-                <ul className="divide-y divide-zinc-800">
-                  {group.items.map((service) => {
-                    const meta = [service.unit, service.note].filter(Boolean).join(' • ');
-
-                    return (
-                      <li key={service.id} className="py-3 first:pt-2">
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                          <p className="text-sm text-zinc-200 sm:text-base">{service.name}</p>
-                          <p className="shrink-0 text-base font-semibold text-amber-400 sm:text-lg">
-                            {formatPrice(service.price)}
-                          </p>
-                        </div>
-                        {meta && <p className="mt-1 text-xs text-zinc-500 sm:text-sm">{meta}</p>}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-zinc-500">По вашему запросу услуги не найдены.</p>
-        )}
-      </section>
-
-      <section className="mb-6 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl sm:p-7">
-        <h3 className="text-lg font-semibold text-zinc-100 sm:text-xl">Запчасти по себестоимости</h3>
-        <p className="mt-2 text-sm text-zinc-300 sm:text-base">
-          Подберем и привезем запчасти почти на любое авто без лишней накрутки. Оставьте заявку,
-          и мы напишем по срокам и стоимости.
-        </p>
-      </section>
-
-      <section
-        id="book"
-        className="scroll-mt-28 rounded-3xl border border-zinc-800 bg-zinc-900/70 p-5 shadow-2xl sm:p-7"
-      >
-        <h2 className="text-xl font-semibold text-zinc-100 sm:text-2xl">Оставить заявку</h2>
-        <p className="mt-1 text-sm text-zinc-400">Ответим в Telegram или по телефону.</p>
-
-        <form onSubmit={handleSubmit} className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-zinc-300">ФИО</span>
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
-              placeholder="Иванов Иван Иванович"
-              className="h-11 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-zinc-100 outline-none ring-amber-500/40 transition focus:ring"
-              required
-            />
-          </label>
-
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-zinc-300">Телефон или Telegram</span>
-            <input
-              type="text"
-              value={form.contact}
-              onChange={(event) => setForm((prev) => ({ ...prev, contact: event.target.value }))}
-              placeholder="+7... или @nickname"
-              className="h-11 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-zinc-100 outline-none ring-amber-500/40 transition focus:ring"
-              required
-            />
-          </label>
-
-          <label className="grid gap-1 text-sm">
-            <span className="font-medium text-zinc-300">Марка и модель авто</span>
-            <input
-              type="text"
-              value={form.car}
-              onChange={(event) => setForm((prev) => ({ ...prev, car: event.target.value }))}
-              placeholder="BMW X5 G05"
-              className="h-11 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-zinc-100 outline-none ring-amber-500/40 transition focus:ring"
-            />
-          </label>
-
-          <label className="grid gap-1 text-sm sm:col-span-2">
-            <span className="font-medium text-zinc-300">Комментарий</span>
             <textarea
+              placeholder="Необходимые работы"
+              value={form.requiredWorks}
+              onChange={(event) => setForm((prev) => ({ ...prev, requiredWorks: event.target.value }))}
+              className="min-h-20 rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
+            />
+
+            <textarea
+              placeholder="Комментарий"
               value={form.comment}
               onChange={(event) => setForm((prev) => ({ ...prev, comment: event.target.value }))}
-              placeholder="Опишите задачу: что сделать, когда удобно приехать"
-              className="min-h-28 rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100 outline-none ring-amber-500/40 transition focus:ring"
+              className="min-h-20 rounded-md border border-slate-300 px-3 py-2 outline-none ring-slate-300 focus:ring"
             />
-          </label>
 
-          <input
-            type="text"
-            name="company"
-            value={form.company}
-            onChange={(event) => setForm((prev) => ({ ...prev, company: event.target.value }))}
-            className="hidden"
-            tabIndex={-1}
-            autoComplete="off"
-            aria-hidden="true"
-          />
+            <input
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              className="hidden"
+              value={form.company}
+              onChange={(event) => setForm((prev) => ({ ...prev, company: event.target.value }))}
+              aria-hidden="true"
+              name="company"
+            />
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-11 rounded-xl bg-amber-500 px-4 font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-amber-700/80 disabled:text-zinc-100 sm:col-span-2"
-          >
-            {isSubmitting ? 'Отправка...' : 'Отправить в Telegram'}
-          </button>
-        </form>
 
-        {requestState.type === 'success' && (
-          <p className="mt-3 text-sm text-emerald-400">{requestState.message}</p>
-        )}
-        {requestState.type === 'error' && (
-          <p className="mt-3 text-sm text-rose-400">{requestState.message}</p>
-        )}
-      </section>
+            <label className="flex items-start gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={form.consent}
+                onChange={(event) => setForm((prev) => ({ ...prev, consent: event.target.checked }))}
+                className="mt-1"
+                required
+              />
+              <span>Соглашаюсь на обработку персональных данных</span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              onClick={() => track('submitClicks')}
+              className="rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
+              {isSubmitting ? 'Отправка...' : 'Отправить в Telegram'}
+            </button>
+          </form>
+
+          {status.type === 'success' && <p className="mt-3 text-sm text-emerald-700">{status.message}</p>}
+          {status.type === 'error' && <p className="mt-3 text-sm text-rose-700">{status.message}</p>}
+        </section>
+      </div>
     </main>
   );
 }

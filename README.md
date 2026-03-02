@@ -1,120 +1,98 @@
-﻿# Хороший сервис - сайт автосервиса
+# Автосервис — лёгкий сайт на Next.js
 
-Легкий одностраничный сайт на **Next.js (App Router) + TypeScript + Tailwind**.
+Минимальный сайт автосервиса на **Next.js (App Router) + TypeScript + Tailwind**.
 
-## Что уже реализовано
+## Что внутри
 
-- Адаптивная мобильная вёрстка: удобно смотреть прайс и заполнять форму с телефона.
-- Один экран с разделами: интро, прайс, блок про запчасти, обратная связь.
-- Поиск по услугам и фильтр по категориям.
-- Отправка заявки в Telegram через серверный `POST /api/telegram`.
-- Антиспам: скрытое поле `company` (honeypot) и минимальная валидация.
-- В Telegram заявка публикуется отдельным постом с кнопкой `Не обработано`.
-- По клику статус меняется на `Обработано ✅` через webhook (`/api/telegram/webhook`).
-- Заявки сохраняются в `storage/leads.json` и доступны для выгрузки CSV.
+- Липкий header с якорями на прайс и форму записи
+- Intro-блок с условиями
+- Прайс с поиском и фильтрацией по категориям
+- Калькулятор работ с мультивыбором из перечня услуг
+- CTA в калькуляторе: **«отправить заявку на этот перечень и получить скидку»**
+- Форма записи (сбоку на десктопе) + поле «Необходимые работы»
+- Галочка согласия на обработку персональных данных (обязательная)
+- Отправка в Telegram через серверный API route
+- Админка `/admin` со списком заявок и метриками
 
-## Локальное виртуальное окружение (для теста)
+## Настройка Telegram
 
-Рекомендуется запускать проект в изолированном Node-окружении через `nvm`.
-
-1. Установите Node.js 20 через nvm:
-
-```bash
-nvm install 20
-nvm use 20
-node -v
-```
-
-2. Установите зависимости и запустите:
-
-```bash
-npm i
-npm run dev
-```
-
-Сайт откроется на `http://localhost:3000`.
-
-## Переменные окружения
-
-Скопируйте пример:
-
-```bash
-cp .env.example .env.local
-```
-
-Заполните `.env.local`:
-
-```env
-TELEGRAM_BOT_TOKEN=123456:ABCDEF...
-TELEGRAM_CHAT_ID=-1001234567890
-TELEGRAM_WEBHOOK_SECRET=any_random_secret_string
-LEADS_EXPORT_TOKEN=strong_export_token
-```
-
-- `TELEGRAM_BOT_TOKEN` - токен бота из BotFather.
-- `TELEGRAM_CHAT_ID` - ID закрытого канала/чата, куда постим лиды.
-- `TELEGRAM_WEBHOOK_SECRET` - опционально, защита webhook.
-- `LEADS_EXPORT_TOKEN` - опционально, защита выгрузки CSV.
-
-## Как создать бота (BotFather)
+### 1) Создать бота через BotFather
 
 1. Откройте Telegram и найдите `@BotFather`.
-2. Отправьте `/newbot`.
+2. Отправьте команду `/newbot`.
 3. Укажите имя и username бота.
-4. Сохраните токен, который вернет BotFather.
+4. BotFather вернёт токен вида `123456:ABC-DEF...` — это `TELEGRAM_BOT_TOKEN`.
 
-## Как настроить закрытый канал для лидов
+### 2) Узнать `chat_id`
 
-1. Создайте закрытый канал в Telegram.
-2. Добавьте вашего бота в канал.
-3. Выдайте боту права администратора (минимум: публикация сообщений).
-4. В `.env.local` укажите `TELEGRAM_CHAT_ID` этого канала.
+1. Напишите любое сообщение вашему боту в Telegram.
+2. Откройте:
 
-## Как узнать `chat_id` канала
+   ```
+   https://api.telegram.org/bot<ВАШ_ТОКЕН>/getUpdates
+   ```
 
-1. Временно отключите webhook (если уже включен):
+3. В ответе найдите поле `chat.id` — это `TELEGRAM_CHAT_ID`.
 
-```text
-https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/deleteWebhook
-```
+## Настройка `.env` на macOS
 
-2. Опубликуйте любое сообщение в вашем канале.
-3. Откройте:
+1. Перейдите в папку проекта:
 
-```text
-https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getUpdates
-```
+   ```bash
+   cd /path/to/Garaj
+   ```
 
-4. Найдите `channel_post.chat.id` (обычно вида `-100...`) - это и есть `TELEGRAM_CHAT_ID`.
+2. Создайте локальный файл окружения:
 
-## Включение webhook для кнопки "Обработано"
+   ```bash
+   cp .env.example .env.local
+   ```
 
-После деплоя (нужен публичный HTTPS URL):
+3. Откройте файл в редакторе (например, VS Code):
 
-```text
-https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook?url=https://<YOUR_DOMAIN>/api/telegram/webhook&secret_token=<TELEGRAM_WEBHOOK_SECRET>
-```
+   ```bash
+   code .env.local
+   ```
 
-Проверка:
+4. Заполните значения:
 
-```text
-https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getWebhookInfo
-```
+   ```env
+   TELEGRAM_BOT_TOKEN=...
+   TELEGRAM_CHAT_ID=...
+   ```
 
-Без webhook кнопка в Telegram будет отображаться, но не сможет менять статус.
+> `.env.local` не должен попадать в git.
 
-## Выгрузка заявок таблицей
+## Локальное тестирование на macOS
 
-CSV выгрузка доступна по GET:
+1. Установите зависимости:
 
-```text
-http://localhost:3000/api/leads/export?token=<LEADS_EXPORT_TOKEN>
-```
+   ```bash
+   npm i
+   ```
 
-Если `LEADS_EXPORT_TOKEN` не задан, выгрузка будет доступна без токена.
+2. Запустите dev-сервер:
 
-## Полезные маршруты
+   ```bash
+   npm run dev
+   ```
 
-- `POST /api/telegram` - отправка заявки из формы в Telegram.
-- `POST /api/telegram/webhook` - обработка нажатия кнопки статуса.
-- `GET /api/leads/export` - скачать заявки в CSV.
+3. Откройте в браузере:
+   - Главная: [http://localhost:3000](http://localhost:3000)
+   - Админка: [http://localhost:3000/admin](http://localhost:3000/admin)
+
+4. Проверьте вручную:
+   - Поиск/фильтр в прайсе
+   - Калькулятор с мультивыбором
+   - Кнопку «отправить заявку на этот перечень и получить скидку»
+   - Обязательную галочку согласия в форме
+   - Отправку заявки в Telegram
+
+## API
+
+- `POST /api/telegram` — принимает заявку и отправляет в Telegram.
+- `POST /api/metrics` — принимает события метрик (`transitions`, `formClicks`, `submitClicks`).
+
+## Примечание
+
+Для демо данные заявок и метрик сохраняются в `.data/store.json` на сервере.

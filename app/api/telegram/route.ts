@@ -1,52 +1,45 @@
-﻿import { NextResponse } from 'next/server';
-import { appendLead } from '@/lib/leads';
-
-export const runtime = 'nodejs';
+import { NextResponse } from 'next/server';
+import { services } from '@/data/services';
+import { addSubmission } from '@/lib/store';
 
 type RequestBody = {
-  fullName?: string;
-  contact?: string;
+  name?: string;
+  phone?: string;
   car?: string;
+  serviceId?: string;
+  requiredWorks?: string;
   comment?: string;
   company?: string;
+  consent?: boolean;
 };
 
-type TelegramSendResponse = {
-  ok: boolean;
-  description?: string;
-  result?: {
-    message_id?: number;
-  };
-};
-
-function normalize(value: string | undefined): string {
-  return (value || '').trim();
-}
-
-function safeValue(value: string): string {
-  return value.length > 0 ? value : '—';
+function toSafeText(value: string | undefined): string {
+  const text = (value || '').trim();
+  return text.length > 0 ? text : '—';
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RequestBody;
 
-    if (normalize(body.company).length > 0) {
+    if ((body.company || '').trim().length > 0) {
       return NextResponse.json({ ok: true });
     }
 
-    const fullName = normalize(body.fullName);
-    const contact = normalize(body.contact);
-    const car = normalize(body.car);
-    const comment = normalize(body.comment);
+    const name = (body.name || '').trim();
+    const phone = (body.phone || '').trim();
 
-    if (!fullName) {
-      return NextResponse.json({ ok: false, error: 'Укажите ФИО.' }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ ok: false, error: 'Укажите имя.' }, { status: 400 });
     }
 
-    if (!contact) {
+    if (!phone) {
+      return NextResponse.json({ ok: false, error: 'Укажите телефон.' }, { status: 400 });
+    }
+
+    if (!body.consent) {
       return NextResponse.json(
-        { ok: false, error: 'Укажите телефон или Telegram.' },
+        { ok: false, error: 'Необходимо согласие на обработку персональных данных.' },
         { status: 400 }
       );
     }
@@ -61,13 +54,16 @@ export async function POST(request: Request) {
       );
     }
 
+    const selectedService = services.find((service) => service.id === body.serviceId);
+
     const message = [
       'Новая заявка:',
-      `ФИО: ${safeValue(fullName)}`,
-      `Контакт: ${safeValue(contact)}`,
-      `Авто: ${safeValue(car)}`,
-      `Комментарий: ${safeValue(comment)}`,
-      'Статус: не обработано'
+      `Имя: ${toSafeText(name)}`,
+      `Телефон: ${toSafeText(phone)}`,
+      `Авто: ${toSafeText(body.car)}`,
+      `Услуга: ${selectedService ? selectedService.name : '—'}`,
+      `Необходимые работы: ${toSafeText(body.requiredWorks)}`,
+      `Комментарий: ${toSafeText(body.comment)}`
     ].join('\n');
 
     const telegramResponse = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -77,38 +73,28 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         chat_id: chatId,
-        text: message,
-        reply_markup: {
-          inline_keyboard: [[{ text: 'Не обработано', callback_data: 'lead_mark_done' }]]
-        }
-      }),
-      cache: 'no-store'
+        text: message
+      })
     });
 
-    const telegramPayload = (await telegramResponse.json()) as TelegramSendResponse;
-
-    if (!telegramResponse.ok || !telegramPayload.ok) {
+    if (!telegramResponse.ok) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: telegramPayload.description || 'Не удалось отправить сообщение в Telegram.'
-        },
+        { ok: false, error: 'Не удалось отправить сообщение в Telegram.' },
         { status: 502 }
       );
     }
 
-    await appendLead({
-      fullName,
-      contact,
-      car,
-      comment,
-      status: 'не обработано',
-      telegramMessageId: telegramPayload.result?.message_id
+    await addSubmission({
+      name,
+      phone,
+      car: toSafeText(body.car),
+      service: selectedService ? selectedService.name : '—',
+      requiredWorks: toSafeText(body.requiredWorks),
+      comment: toSafeText(body.comment)
     });
 
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('POST /api/telegram failed', error);
+  } catch {
     return NextResponse.json({ ok: false, error: 'Некорректный формат запроса.' }, { status: 400 });
   }
 }

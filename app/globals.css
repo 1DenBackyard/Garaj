@@ -1,9 +1,9 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html {
@@ -11,75 +11,5 @@ html {
 }
 
 body {
-  @apply antialiased text-zinc-100;
-  background:
-    radial-gradient(1200px 600px at 0% -10%, rgba(245, 158, 11, 0.15), transparent 60%),
-    radial-gradient(900px 500px at 100% 5%, rgba(59, 130, 246, 0.12), transparent 55%),
-    linear-gradient(180deg, #09090b 0%, #121215 45%, #0b0b0d 100%);
-  min-height: 100vh;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-input,
-select,
-textarea,
-button {
-  font: inherit;
-}
-
-.grid-pattern {
-  position: relative;
-  overflow: hidden;
-}
-
-.grid-pattern::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.65), transparent 95%);
-  pointer-events: none;
-}
-
-.halo {
-  position: absolute;
-  width: 26rem;
-  height: 26rem;
-  border-radius: 9999px;
-  filter: blur(90px);
-  opacity: 0.3;
-  animation: drift 10s ease-in-out infinite;
-}
-
-.halo-left {
-  left: -8rem;
-  top: 6rem;
-  background: rgba(245, 158, 11, 0.55);
-}
-
-.halo-right {
-  right: -8rem;
-  top: 18rem;
-  background: rgba(59, 130, 246, 0.45);
-  animation-delay: 2s;
-}
-
-@keyframes drift {
-  0% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-14px);
-  }
-
-  100% {
-    transform: translateY(0px);
-  }
+  @apply bg-slate-50 text-slate-900 antialiased;
 }
